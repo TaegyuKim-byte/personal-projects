@@ -1,0 +1,25 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" version="27.2.0">
+  <diagram name="페이지-1" id="r0fNknynQlKNwsbWlVvg">
+    <mxGraphModel dx="386" dy="244" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Lk1b1Nx7TdJ71u4ilE-_-1" value="Player" style="swimlane;childLayout=stackLayout;resizeParent=1;resizeParentMax=0;horizontal=1;startSize=20;horizontalStack=0;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="240" width="250" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="Lk1b1Nx7TdJ71u4ilE-_-3" value="&lt;font style=&quot;font-size: 7px;&quot;&gt;Instance Variable&lt;/font&gt;" style="swimlane;startSize=20;horizontal=0;html=1;" vertex="1" parent="Lk1b1Nx7TdJ71u4ilE-_-1">
+          <mxGeometry y="20" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="Lk1b1Nx7TdJ71u4ilE-_-6" value="Text" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="Lk1b1Nx7TdJ71u4ilE-_-3">
+          <mxGeometry x="20" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Lk1b1Nx7TdJ71u4ilE-_-4" value="Method" style="swimlane;startSize=20;horizontal=0;html=1;" vertex="1" parent="Lk1b1Nx7TdJ71u4ilE-_-1">
+          <mxGeometry y="90" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="Lk1b1Nx7TdJ71u4ilE-_-7" value="Text" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="Lk1b1Nx7TdJ71u4ilE-_-4">
+          <mxGeometry x="20" width="50" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
