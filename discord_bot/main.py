@@ -40,7 +40,7 @@ async def 안녕(ctx):
 
 # [5. 명령어: =재생 (핵심 기능)]
 @bot.command()
-async def 재생(ctx, url):
+async def 재생(ctx, *, query):
     # (1) 유저 상태 확인: 유저가 음성 채널에 있어야 봇도 따라 들어갑니다.
     if ctx.author.voice is None:
         await ctx.send("❌ 먼저 음성 채널에 들어가주세요!")
@@ -53,7 +53,7 @@ async def 재생(ctx, url):
     else:
         voice_client = ctx.voice_client
 
-    await ctx.send(f"🔍 **URL 분석 및 스트림 추출 중...**")
+    await ctx.send(f"🔍 **유튜브에 검색중...**")
 
     # (3) [CS 심화] 동기 코드를 비동기로 실행하기 (ThreadPoolExecutor)
     # ytdl.extract_info는 네트워크 I/O를 수행하는 'Blocking 함수'입니다.
@@ -61,7 +61,14 @@ async def 재생(ctx, url):
     # 따라서 별도의 스레드로 던져서 실행하고, 결과만 await로 받습니다.
     loop = asyncio.get_event_loop()
     try:
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(f"ytsearch:{query}", download=False))
+
+        if 'entries' not in data or not data['entries']:
+            await ctx.send("검색 결과가 없어. 다른 검색어로 다시 ㄱㄱ")
+            return
+        
+        data = data['entries'][0]
+
     except Exception as e:
         await ctx.send(f"❌ 에러 발생: {e}")
         return
@@ -95,6 +102,6 @@ async def 나가(ctx):
 
 # [7. 실행]
 # 토큰은 꼭 새로 발급받아서 넣으세요!
-bot.run('토큰')
+bot.run('토큰!')
 
 # 봇 프로세스 종료 -> ctrl C (시스템프로그래밍에서 배움)
