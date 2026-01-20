@@ -2,6 +2,13 @@ import discord
 from discord.ext import commands
 import yt_dlp
 import asyncio
+import os
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv('token.env')
+
+token = os.getenv("DISCORD_TOKEN")
 
 # [시스템 설정]
 intents = discord.Intents.default()
@@ -124,6 +131,6 @@ async def 나가(ctx):
 
 # [실행]
 # 토큰은 꼭 새로 발급받아서 넣으세요!
-bot.run('토큰!')
+bot.run(token)
 
 # 봇 프로세스 종료 -> ctrl C (시스템프로그래밍에서 배움)
