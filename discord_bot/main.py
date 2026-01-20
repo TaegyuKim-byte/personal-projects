@@ -58,7 +58,7 @@ async def 도움(ctx):
     # 필드 추가 (add_field)
     # inline = True -> 가로로 나열, False -> 줄바꿈
     embed.add_field(name = "🎵 음악 명령어", value = "`=재생 [검색어]`, `=나가`", inline = False)
-    embed.add_field(name = "⚙️ 시스템 명령어", value = "`=도움`", inline = False)
+    embed.add_field(name = "⚙️ 시스템 명령어", value = "`=도움`, `=안녕`", inline = False)
 
     # 푸터(바닥글) 및 썸네일 설정
     embed.set_footer(text=f"요청자: {ctx.author.name}", icon_url=ctx.author.display_avatar.url)
