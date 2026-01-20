@@ -3,12 +3,12 @@ from discord.ext import commands
 import yt_dlp
 import asyncio
 
-# [1. 시스템 설정]
+# [시스템 설정]
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='=', intents=intents)
 
-# [2. 멀티미디어 설정 (yt-dlp & FFmpeg)]
+# [멀티미디어 설정 (yt-dlp & FFmpeg)]
 # yt-dlp: 유튜브 URL에서 실제 오디오 스트림 주소를 추출하는 도구
 yt_dl_opts = {
     'format': 'bestaudio/best',
@@ -24,7 +24,7 @@ ffmpeg_options = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
 }
 
-# [3. 이벤트 리스너]
+# [이벤트 리스너]
 @bot.event
 async def on_ready():
     print(f'--------------------------------')
@@ -33,12 +33,34 @@ async def on_ready():
     print(f'Latency: {round(bot.latency * 1000)}ms')
     print(f'--------------------------------')
 
-# [4. 명령어: =안녕]
+# [명령어: =안녕]
 @bot.command()
 async def 안녕(ctx):
     await ctx.send(f'반갑습니다! 시스템 정상 가동 중입니다. 🤖')
 
-# [5. 명령어: =재생 (핵심 기능)]
+# [명령어 =도움]
+@bot.command()
+async def 도움(ctx):
+    # 임베드 객체 생성 (타이틀, 설명, 색상 설정)
+    embed = discord.Embed(
+        title = "봇 도움말",
+        description = "이 봇은 음악 재생과 다양한 기능을 제공합니다.\n접두사: `=`",
+        color = discord.Color.blue()
+    )
+
+    # 필드 추가 (add_field)
+    # inline = True -> 가로로 나열, False -> 줄바꿈
+    embed.add_field(name = "🎵 음악 명령어", value = "`=재생 [검색어]`, `=나가`", inline = False)
+    embed.add_field(name = "⚙️ 시스템 명령어", value = "`=도움`", inline = False)
+
+    # 푸터(바닥글) 및 썸네일 설정
+    embed.set_footer(text=f"요청자: {ctx.author.name}", icon_url=ctx.author.display_avatar.url)
+    embed.set_thumbnail(url=bot.user.avatar.url) # 봇 프사 오른쪽 위에 표시
+
+    # 전송 (embed 파라미터 사용)
+    await ctx.send(embed=embed)
+
+# [명령어: =재생 (핵심 기능)]
 @bot.command()
 async def 재생(ctx, *, query):
     # (1) 유저 상태 확인: 유저가 음성 채널에 있어야 봇도 따라 들어갑니다.
@@ -91,7 +113,7 @@ async def 재생(ctx, *, query):
     voice_client.play(player)
     await ctx.send(f"🎵 **재생 시작:** {title}")
 
-# [6. 명령어: =나가]
+# [명령어: =나가]
 @bot.command()
 async def 나가(ctx):
     if ctx.voice_client:
@@ -100,7 +122,7 @@ async def 나가(ctx):
     else:
         await ctx.send("저는 음성 채널에 없는데요?")
 
-# [7. 실행]
+# [실행]
 # 토큰은 꼭 새로 발급받아서 넣으세요!
 bot.run('토큰!')
 
