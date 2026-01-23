@@ -3,6 +3,7 @@ from discord.ext import commands
 import yt_dlp
 import asyncio
 import os
+from collections import deque # [자료구조] 큐를 구현하기 위함
 from dotenv import load_dotenv
 
 # .env 파일 로드
@@ -21,6 +22,14 @@ yt_dl_opts = {
     'format': 'bestaudio/best',
     'noplaylist': True,
     'quiet': True, # 터미널 로그를 더럽히지 않게
+    'nocheckcertificate': True,
+    'no_warnings': True, # 자잘한 경고 그만 보기
+    # 봇을 안드로이드 폰인 척 위장
+    'extractor_args': {
+        'youtube': {
+            'player_client': ['android', 'ios']
+        }
+    }
 }
 ytdl = yt_dlp.YoutubeDL(yt_dl_opts)
 
@@ -30,6 +39,10 @@ ffmpeg_options = {
     'options': '-vn',
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
 }
+
+# [시스템 변수: 대기열]
+# url과 title을 튜플이나 딕셔너리로 저장할 큐입니다.
+music_queue = deque()
 
 # [이벤트 리스너]
 @bot.event
@@ -57,7 +70,7 @@ async def 도움(ctx):
 
     # 필드 추가 (add_field)
     # inline = True -> 가로로 나열, False -> 줄바꿈
-    embed.add_field(name = "🎵 음악 명령어", value = "`=재생 [검색어]`, `=나가`", inline = False)
+    embed.add_field(name = "🎵 음악 명령어", value = "`=재생 [검색어]`, `=스킵`, `=목록`, `=나가`", inline = False)
     embed.add_field(name = "⚙️ 시스템 명령어", value = "`=도움`, `=안녕`", inline = False)
 
     # 푸터(바닥글) 및 썸네일 설정
@@ -66,6 +79,40 @@ async def 도움(ctx):
 
     # 전송 (embed 파라미터 사용)
     await ctx.send(embed=embed)
+
+# [함수: 다음 곡 재생]
+# 이 함수는 노래가 끝난 직후(after 콜백) 호출됩니다.
+def play_next(ctx):
+    if music_queue: # 큐에 노래가 남아있다면
+        # 큐의 가장 앞쪽 데이터(왼쪽)를 꺼냅니다 (FIFO)
+        next_song = music_queue.popleft() 
+        url = next_song['url']
+        title = next_song['title']
+
+        voice_client = ctx.voice_client
+
+        # FFmpeg 프로세스 생성
+        player = discord.FFmpegPCMAudio(
+            url, 
+            executable='C:/ffmpeg/bin/ffmpeg.exe', # 경로 주의
+            **ffmpeg_options
+        )
+
+        # 재생하면서, 이 노래가 끝나면 다시 play_next를 호출하도록 재귀적으로 설정
+        voice_client.play(player, after=lambda e: play_next(ctx))
+        
+        # [심화] 콜백 함수 내부는 동기(Sync) 환경이라 await ctx.send를 바로 못 씁니다.
+        # 따라서 이벤트 루프에 스레드 세이프하게 코루틴을 던져줍니다.
+        fut = asyncio.run_coroutine_threadsafe(ctx.send(f"🎵 **다음 곡 재생:** {title}"), bot.loop)
+        try:
+            fut.result()
+        except:
+            pass # 에러 무시
+    else:
+        # 큐가 비었으면 아무것도 안 함 (대기 상태)
+        asyncio.run_coroutine_threadsafe(ctx.send("대기열이 비었습니다. 재생을 종료합니다."), bot.loop)
+
+# =============================================
 
 # [명령어: =재생 (핵심 기능)]
 @bot.command()
@@ -82,7 +129,7 @@ async def 재생(ctx, *, query):
     else:
         voice_client = ctx.voice_client
 
-    await ctx.send(f"🔍 **유튜브에 검색중...**")
+    await ctx.send(f"🔍  **검색 및 대기열 추가 중...**")
 
     # (3) [CS 심화] 동기 코드를 비동기로 실행하기 (ThreadPoolExecutor)
     # ytdl.extract_info는 네트워크 I/O를 수행하는 'Blocking 함수'입니다.
@@ -105,20 +152,47 @@ async def 재생(ctx, *, query):
     song_url = data['url']
     title = data['title']
 
-    # (4) 기존 재생 중단 및 FFmpeg 프로세스 포크(Fork)
-    if voice_client.is_playing():
-        voice_client.stop()
+    # 노래 정보를 딕셔너리로 만듦
+    song_info = {'url': song_url, 'title': title}
 
-    # 여기서 ffmpeg.exe 자식 프로세스가 생성되고, 
-    # Python은 파이프(Pipe)를 통해 PCM 데이터를 실시간으로 받아 UDP로 쏘아줍니다.
-    player = discord.FFmpegPCMAudio(
-        song_url, 
-        executable='C:/ffmpeg/bin/ffmpeg.exe', 
-        **ffmpeg_options
-    )
-    
-    voice_client.play(player)
-    await ctx.send(f"🎵 **재생 시작:** {title}")
+    # (4) 로직 분기 (이미 재생 중 / 재생 중 아님)
+    if voice_client.is_playing():
+        music_queue.append(song_info)
+        await ctx.send(f"✅ **대기열에 추가됨:** {title} (대기 순서: {len(music_queue)}번째)")
+
+    else:
+        # 여기서 ffmpeg.exe 자식 프로세스가 생성되고, 
+        # Python은 파이프(Pipe)를 통해 PCM 데이터를 실시간으로 받아 UDP로 쏘아줍니다.
+        player = discord.FFmpegPCMAudio(
+            song_url, 
+            executable='C:/ffmpeg/bin/ffmpeg.exe', 
+            **ffmpeg_options
+        )
+        # 이 노래 끝나면 play_next 실행해라!
+        voice_client.play(player, after=lambda e: play_next(ctx))
+        await ctx.send(f"🎵 **재생 시작:** {title}")
+
+# [명령어: =스킵]
+@bot.command()
+async def 스킵(ctx):
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.stop() # stop()을 하면 자동으로 after 콜백(play_next)이 실행되어 다음 곡으로 넘어감
+        await ctx.send("⏭️ **현재 곡 스킵!**")
+    else:
+        await ctx.send("재생 중인 곡이 없어요.")
+
+# [명령어: =목록]
+@bot.command()
+async def 목록(ctx):
+    if not music_queue:
+        await ctx.send("비어있음.")
+    else:
+        msg = "📜 **현재 대기열:**\n"
+        for i, song in enumerate(music_queue):
+            msg += f"{i+1}. {song['title']}\n"
+        await ctx.send(msg)
+
+# =============================================
 
 # [명령어: =나가]
 @bot.command()
