@@ -121,6 +121,11 @@ async def 재생(ctx, *, query):
     if ctx.author.voice is None:
         await ctx.send("❌ 먼저 음성 채널에 들어가주세요!")
         return
+    
+    # (1-1) 봇이 이미 다른 음성 채널에 연결되어 있는지 확인
+    if ctx.voice_client is not None and ctx.voice_client.channel != ctx.author.voice.channel:
+        await ctx.send(f"❌ 봇이 이미 다른 채널 (#{ctx.voice_client.channel.name}) 에서 음악을 재생 중입니다!")
+        return
 
     # (2) 음성 채널 접속 (Handshake)
     channel = ctx.author.voice.channel
@@ -187,7 +192,7 @@ async def 목록(ctx):
     if not music_queue:
         await ctx.send("비어있음.")
     else:
-        msg = "📜 **현재 대기열:**\n"
+        msg = "📜 **현재 대기열:**\n\n"
         for i, song in enumerate(music_queue):
             msg += f"{i+1}. {song['title']}\n"
         await ctx.send(msg)
